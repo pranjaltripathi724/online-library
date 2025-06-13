@@ -1,10 +1,46 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+  <title>Book List</title>
 </head>
 <body>
-$END$
+<h2>All Books</h2>
+<table border="1" cellpadding="8" cellspacing="0">
+  <thead>
+  <tr>
+    <th>Title</th>
+    <th>Genre</th>
+    <th>Published Date</th>
+    <th>Author</th>
+  </tr>
+  </thead>
+  <tbody>
+  {% for book in page_obj %}
+  <tr>
+    <td>{{ book.title }}</td>
+    <td>{{ book.genre }}</td>
+    <td>{{ book.published_date }}</td>
+    <td>{{ book.author.name }}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="4">No books found.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<div>
+  {% if page_obj.has_previous %}
+  <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+  {% endif %}
+
+  Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+
+  {% if page_obj.has_next %}
+  <a href="?page={{ page_obj.next_page_number }}">Next</a>
+  {% endif %}
+</div>
+
+<br>
+<a href="{% url 'export-excel' %}">Export to Excel</a>
 </body>
 </html>

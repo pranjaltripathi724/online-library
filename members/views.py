@@ -1,80 +1,101 @@
-from email import message
-from django.db import IntegrityError
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 from django.views import View
-from pydantic import ValidationError, validate_email
-from . import models
-from .models import Book, Author
-# from Task.members import models
-# Create your views here.
+from django.core.paginator import Paginator
+from django.http import HttpResponse
+from openpyxl.workbook import Workbook
+
+from .admin_login_view import AdminRequiredMixin
+from .forms import AuthorForm, BookForm, BorrowRecordForm
+from .models import Author, Book, BorrowRecord
 
 
-
-class Author(View):
+class AuthorViews(AdminRequiredMixin,View):
     def get(self, request):
-        return render(request, 'Author.html')
-    
-    def post(self, request, *args, **kwargs):
-        name = request.POST.get('name')
-        email = request.POST.get('email')
-        bio = request.POST.get('bio')
+        form = AuthorForm()
+        return render(request, 'Author.html', {'form': form})
 
-        # try:
-        #     validate_email(email)
-        #     if not email.endswith('@gmail.com'):
-        #         raise ValidationError("Only Gmail addresses allowed.")
-        # except ValidationError as e:
-        #     return render(request, 'Author.html', {'error': str(e)})
-        # try:
-        #     data=models.Author(name=name, email=email, bio=bio)
-        #     data.save()
-        #     return redirect('Author')
-        # except IntegrityError:
-        #     return render(request, 'Author.html', {'error': 'Email already exists.'})
+    def post(self, request):
+        form = AuthorForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return render(request, 'Author.html', {'form': AuthorForm(), 'success': 'Author added'})
+        return render(request, 'Author.html', {'form': form})
+
+
+class BookViews(AdminRequiredMixin,View):
+    def get(self, request):
+        form = BookForm()
+        return render(request, 'Book.html', {'form': form})
+
+    def post(self, request):
+        form = BookForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return render(request, 'Book.html', {'form': BookForm(), 'success': 'Book added'})
+        return render(request, 'Book.html', {'form': form})
+
+
+class BorrowRecordViews(AdminRequiredMixin,View):
+    def get(self, request):
+        form = BorrowRecordForm()
+        return render(request, 'BorrowRecord.html', {'form': form})
+
+    def post(self, request):
+        form = BorrowRecordForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return render(request, 'BorrowRecord.html', {'form': BorrowRecordForm(), 'success': 'Borrow record added'})
+        return render(request, 'BorrowRecord.html', {'form': form})
+
+
+
+class AuthorListView(View):
+    def get(self, request):
+        authors = Author.objects.all()
+        paginator = Paginator(authors, 5) 
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        return render(request, 'AuthorList.html', {'page_obj': page_obj})
+
+
+class BookListView(View):
+    def get(self, request):
+        books = Book.objects.all()
+        paginator = Paginator(books, 5)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        return render(request, 'BookList.html', {'page_obj': page_obj})
+
+
+class BorrowRecordListView(View):
+    def get(self, request):
+        records = BorrowRecord.objects.all()
+        paginator = Paginator(records, 5)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        return render(request, 'BorrowRecordList.html', {'page_obj': page_obj})
+
+
+
+class ExportExcelView(AdminRequiredMixin,View):
+    def get(self, request):
+        wb = Workbook()
+        ws1 = wb.active
+        ws1.title = "Authors"
+        ws1.append(["Name", "Email", "Bio"])
+        for author in Author.objects.all():
+            ws1.append([author.name, author.email, author.bio])
+
         
-        if not validate_email(email):
-            return render(request, 'Author.html', {'error': 'Invalid Email Formate'})
-
-        try:
-            Author.objects.get(email=email)
-            return render(request, 'Author.html', {'error': 'Email already exists.'})
-        except IntegrityError:
-            Author.objects.create(name=name, email=email, bio=bio)
-            return render(request, 'Author.html', {'success': 'Author added successfully'})
-
-
-class Book(View):
-    def get(self, request):
-        authors = models.Author.objects.all()
-        return render(request, 'Book.html', {'authors': authors})
-
-    def post(self, request):
-        title = request.POST.get('title')
-        genre = request.POST.get('genre')
-        published_date = request.POST.get('published_date')
-        author_id = request.POST.get('author_id')
-        author = models.Author.objects.get(id=author_id)
-        book = models.Book(title=title, genre=genre, published_date=published_date, author=author)
-        book.save()
-        authors = models.Author.objects.all()
-        return render(request, 'Book.html', {'authors': authors, 'message': "Data Added Successfully"})
-    
-
-
-
-class BorrowRecord(View):
-    def get(self, request):
-        books = models.Book.objects.all()
-        return render(request, 'BorrowRecord.html', {'books': books})
-
-    def post(self, request):
-        user_name = request.POST.get('user_name')
-        borrow_date = request.POST.get('borrow_date')
-        return_date = request.POST.get('return_date')
-        book_id = request.POST.get('book_id')
-        book = models.Book.objects.get(id=book_id)
-        BorrowRecord = models.BorrowRecord(user_name=user_name, borrow_date=borrow_date, return_date=return_date, book=book)
-        BorrowRecord.save()
-        books = models.Book.objects.all()
-        return render(request, 'BorrowRecord.html', {'books': books, 'message': "Data Added Successfully"})    
+        ws2 = wb.create_sheet(title="Books")
+        ws2.append(["Title", "Genre", "Published Date", "Author"])
+        for book in Book.objects.all():
+            ws2.append([book.title, book.genre, str(book.published_date), book.author.name])
+        ws3 = wb.create_sheet(title="BorrowRecords")
+        ws3.append(["User Name", "Book", "Borrow Date", "Return Date"])
+        for record in BorrowRecord.objects.all():
+            ws3.append([record.user_name, record.book.title, str(record.borrow_date), str(record.return_date)])
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename=library_data.xlsx'
+        wb.save(response)
+        return response

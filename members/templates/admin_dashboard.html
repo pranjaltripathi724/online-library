@@ -1,10 +1,16 @@
+<!-- templates/admin_dashboard.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+  <title>Admin Dashboard</title>
 </head>
 <body>
-$END$
+<h1>Welcome to Admin Dashboard</h1>
+
+<div class="dashboard">
+  <a href="{% url 'add-author' %}" class="button">Add Author</a>
+  <a href="{% url 'add-book' %}" class="button">Add Book</a>
+  <a href="{% url 'add-borrow' %}" class="button">Add Borrow Record</a>
+</div>
 </body>
 </html>
