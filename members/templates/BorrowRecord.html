@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add BorrowRecord</title>
+</head>
+<body>
+    <h2>Add New BorrowRecord</h2>
+    <form method="post">
+        {% csrf_token %}
+        <label>User name:</label>
+        <input type="text" name="user_name" required><br><br>
+        
+        <label>Author:</label>
+        <select name="book_id" required>
+            {% for book in books %}
+                <option value="{{ book.id }}">{{ book.title }}</option>
+            {% endfor %}
+        </select><br><br>
+
+        <label>borrow date:</label>
+        <input type="date" name="borrow_date" required><br><br>
+
+        <label>return date:</label>
+        <input type="date" name="return_date" required><br><br>
+        
+        
+
+        <button type="submit">Add Record</button>
+    </form>
+    
+    {% if message %}
+        <p>{{ message }}</p>
+    {% endif %} 
+</body>
+</html>
+    
