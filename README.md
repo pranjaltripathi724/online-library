@@ -1,3 +1,8 @@
+Full Name - Pranjal Tripathi
+Email ID - pranjaltripathi724@gmail.com
+College Name - All Saints College Of Technology
+Skill - Python
+
 Install required packages
 1.pip install Django
 2. pip install django openpyxl
